@@ -19,6 +19,15 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: gradle
+    - uses: nttld/setup-ndk@v1
+      id: setup-ndk
+      with:
+        ndk-version: r21e
+        add-to-path: false
+    - run: ./build.sh
+    #- name: get pwd
+    #  id: get-pwd
+    #  run: echo "::set-output name=pwd::$(pwd)"
     - name: dependencies
       run: sudo apt-get update&&sudo apt-get install -y libc6-dev-i386 lib32ncurses5-dev libx11-dev g++-multilib lib32z1-dev
     - name: get android sdk
@@ -29,11 +38,16 @@ jobs:
       run: |
         export ANDROID_HOME=`pwd`/android-sdk-linux
         export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
+        echo "${ANDROID_HOME}/tools" >> $GITHUB_PATH
+        echo "${ANDROID_HOME}/platform-tools" >> $GITHUB_PATH
+        echo "ANDROID_HOME=${ANDROID_HOME}" >> $GITHUB_ENV
         ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | android update sdk --filter tools,platform-tools,build-tools-21.0.1,android-16,extra-google-m2repository --no-ui --no-https -a
         ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | android update sdk --filter extra-android-m2repository --no-ui --no-https -a
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
+    env:
+      ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
     #- name: build
     #  run: mvn clean install
